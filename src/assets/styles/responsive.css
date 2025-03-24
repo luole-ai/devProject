@@ -1,0 +1,31 @@
+/* 响应式布局基础样式 */
+:root {
+  --van-primary-color: #1989fa;
+  --van-success-color: #07c160;
+  --van-warning-color: #ff976a;
+  --van-danger-color: #ee0a24;
+}
+
+/* 移动端样式 (默认) */
+.container {
+  width: 100%;
+  padding: 10px;
+}
+
+/* 平板样式 */
+@media screen and (min-width: 768px) {
+  .container {
+    width: 750px;
+    margin: 0 auto;
+    padding: 15px;
+  }
+}
+
+/* 电脑端样式 */
+@media screen and (min-width: 1200px) {
+  .container {
+    width: 1170px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+} 

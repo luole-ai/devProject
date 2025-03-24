@@ -1,0 +1,26 @@
+{
+  "name": "vue",
+  "version": "1.0.0",
+  "main": "babel.config.js",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.26.10",
+    "@vue/cli-plugin-babel": "^5.0.8",
+    "@vue/cli-plugin-eslint": "^5.0.8",
+    "@vue/cli-service": "^5.0.8",
+    "babel-plugin-import": "^1.13.8",
+    "eslint": "^8.57.1",
+    "eslint-plugin-vue": "^10.0.0"
+  },
+  "dependencies": {
+    "vant": "^4.9.18",
+    "vue": "^3.5.13"
+  }
+}

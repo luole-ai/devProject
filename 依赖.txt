@@ -1,0 +1,59 @@
+核心依赖安装
+# Vue 3 核心依赖
+npm install vue@latest
+npm install vue-router@4
+npm install pinia   # Vue 3 推荐的状态管理工具
+
+# UI 框架
+npm install vant    # Vant UI 组件库
+
+# 开发依赖
+npm install @vue/cli-service --save-dev
+npm install @vue/cli-plugin-babel --save-dev
+npm install @vue/cli-plugin-eslint --save-dev
+npm install eslint @babel/eslint-parser eslint-plugin-vue --save-dev
+
+# 可选但推荐的依赖
+npm install axios   # 网络请求
+npm install sass sass-loader --save-dev  # 如果需要使用 SCSS\
+
+常用 NPM 命令
+# 开发环境运行
+npm run serve
+
+# 打包生产环境
+npm run build
+
+# 代码检查
+npm run lint
+
+# 安装所有依赖
+npm install
+
+# 清除依赖并重新安装（遇到依赖问题时使用）
+rm -rf node_modules
+rm package-lock.json
+npm install
+
+package.json 中的脚本配置
+{
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  }
+}
+
+其他有用的命令
+# 全局安装 Vue CLI（如果还没安装）
+npm install -g @vue/cli
+
+# 创建新的 Vue 项目
+vue create project-name
+
+# 查看 Vue CLI 图形界面
+vue ui
+
+如果遇到依赖安装问题，可以尝试：
+使用 npm cache clean --force 清除 npm 缓存
+确保 Node.js 版本兼容（推荐使用 Node.js 16+ 版本）
