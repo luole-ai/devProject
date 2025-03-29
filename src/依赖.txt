@@ -1,0 +1,8 @@
+npm install -g @vue/cli
+vue create responsive-vant-app
+cd responsive-vant-app
+
+npm install vant@next
+npm install postcss-px-to-viewport -D
+npm install vue-router@4
+npm install vuex@next

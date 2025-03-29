@@ -10,9 +10,14 @@ import {
   Grid,
   GridItem,
   Icon,
+  Toast,
   Image as VanImage
 } from 'vant'
 
+// 导入Element Plus配置
+import elementIcons from './plugins/element-icons'
+import elementPlus from './plugins/element-plus'
+import 'element-plus/dist/index.css'
 // 导入Vant样式
 import 'vant/lib/index.css'
 
@@ -29,5 +34,10 @@ app.use(Grid)
 app.use(GridItem)
 app.use(Icon)
 app.use(VanImage)
+app.use(Toast)
+// // 注册Element Plus图标
+app.use(elementIcons)
+// // 注册Element Plus配置
+app.use(elementPlus)
 
 app.mount('#app') 

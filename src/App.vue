@@ -10,7 +10,7 @@ import HomePage from './views/HomePage.vue'
 export default {
   name: 'App',
   components: {
-    HomePage
+    HomePage 
   }
 }
 </script>
