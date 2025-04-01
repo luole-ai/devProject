@@ -1,5 +1,20 @@
 import { createStore } from 'vuex'
 import { DEVICE_TYPE, ORIENTATION, getDeviceType, getOrientation } from '../utils/device'
+import gettersFromFile from './getters'  // 重命名避免冲突
+import app from './modules/app'
+import user from './modules/user'
+import permission from './modules/permission'
+
+// 合并所有 getters
+const allGetters = {
+  ...gettersFromFile,
+  isMobile: state => state.deviceType === DEVICE_TYPE.MOBILE,
+  isTablet: state => state.deviceType === DEVICE_TYPE.TABLET,
+  isDesktop: state => state.deviceType === DEVICE_TYPE.DESKTOP,
+  isPortrait: state => state.orientation === ORIENTATION.PORTRAIT,
+  isLandscape: state => state.orientation === ORIENTATION.LANDSCAPE,
+  isDarkTheme: state => state.theme === 'dark'
+}
 
 export default createStore({
   state: {
@@ -41,12 +56,10 @@ export default createStore({
       commit('setTheme', newTheme)
     }
   },
-  getters: {
-    isMobile: state => state.deviceType === DEVICE_TYPE.MOBILE,
-    isTablet: state => state.deviceType === DEVICE_TYPE.TABLET,
-    isDesktop: state => state.deviceType === DEVICE_TYPE.DESKTOP,
-    isPortrait: state => state.orientation === ORIENTATION.PORTRAIT,
-    isLandscape: state => state.orientation === ORIENTATION.LANDSCAPE,
-    isDarkTheme: state => state.theme === 'dark'
+  getters: allGetters,
+  modules: {
+    app,
+    user,
+    permission
   }
 }) 

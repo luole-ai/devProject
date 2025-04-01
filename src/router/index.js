@@ -1,32 +1,102 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/Home.vue'
-import Camera from '../views/Camera.vue'
+import { ElMessage } from 'element-plus'
+import NProgress from 'nprogress' // 进度条
+import 'nprogress/nprogress.css'
+import { getToken } from '@/utils/auth' // 验证token的方法
+import store from '@/store' // Vuex存储
 
-const routes = [
+// 静态路由 - 所有用户都可以访问的页面
+export const constantRoutes = [
   {
-    path: '/',
-    name: 'Home',
-    component: Home,
-    meta: { title: '首页' }
+    path: '/login',
+    component: () => import('@/views/login/index.vue'),
+    hidden: true
   },
   {
-    path: '/camera',
-    name: 'Camera',
-    component: Camera,
-    meta: { title: '相机' }
+    path: '/404',
+    component: () => import('@/views/error-page/404.vue'),
+    hidden: true
+  },
+  {
+    path: '/',
+    component: () => import('@/layout/index.vue'),
+    redirect: '/dashboard',
+    children: [
+      {
+        path: 'dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        name: 'Dashboard',
+        meta: { title: '首页', icon: 'HomeFilled' }
+      }
+    ]
   }
-  // 其他路由可以在需要时添加
 ]
 
+// 创建路由
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes
+  history: createWebHistory(),
+  routes: constantRoutes,
+  scrollBehavior: () => ({ top: 0 })
 })
 
-// 设置页面标题
-router.beforeEach((to, from, next) => {
-  document.title = to.meta.title ? `${to.meta.title} - 响应式应用` : '响应式应用'
-  next()
+// 白名单
+const whiteList = ['/login', '/404']
+
+// 路由守卫
+router.beforeEach(async(to, from, next) => {
+  NProgress.start()
+  
+  const hasToken = getToken()
+  
+  if (hasToken) {
+    if (to.path === '/login') {
+      // 如果已登录，重定向到首页
+      next({ path: '/' })
+      NProgress.done()
+    } else {
+      // 判断用户是否已获取权限路由
+      const hasRoles = store.getters.roles && store.getters.roles.length > 0
+      if (hasRoles) {
+        next()
+      } else {
+        try {
+          // 获取用户信息（包含权限）
+          const { roles } = await store.dispatch('user/getInfo')
+          
+          // 根据权限生成可访问路由
+          const accessRoutes = await store.dispatch('permission/generateRoutes', roles)
+          
+          // 动态添加路由
+          accessRoutes.forEach(route => {
+            router.addRoute(route)
+          })
+          
+          // 设置replace: true，不会在历史记录中留下重定向记录
+          next({ ...to, replace: true })
+        } catch (error) {
+          // 移除token并转到登录页
+          await store.dispatch('user/resetToken')
+          ElMessage.error(error || '认证失败，请重新登录')
+          next(`/login?redirect=${to.path}`)
+          NProgress.done()
+        }
+      }
+    }
+  } else {
+    // 未登录
+    if (whiteList.indexOf(to.path) !== -1) {
+      // 免登录白名单
+      next()
+    } else {
+      // 重定向到登录页
+      next(`/login?redirect=${to.path}`)
+      NProgress.done()
+    }
+  }
+})
+
+router.afterEach(() => {
+  NProgress.done()
 })
 
 export default router
