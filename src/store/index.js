@@ -3,7 +3,6 @@ import { DEVICE_TYPE, ORIENTATION, getDeviceType, getOrientation } from '../util
 import gettersFromFile from './getters'  // 重命名避免冲突
 import app from './modules/app'
 import user from './modules/user'
-import permission from './modules/permission'
 
 // 合并所有 getters
 const allGetters = {
@@ -59,7 +58,6 @@ export default createStore({
   getters: allGetters,
   modules: {
     app,
-    user,
-    permission
+    user
   }
 }) 

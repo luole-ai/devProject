@@ -24,6 +24,15 @@ module.exports = defineConfig({
       })
     ]
   },
-  
+  // 配置开发服务器
+  devServer: {
+    proxy: {
+    '/api': {
+    target: 'http://localhost:8080/',
+    changeOrigin: true,
+    pathRewrite: { '^/api': '' }
+    }
+    }
+    }
 });
 

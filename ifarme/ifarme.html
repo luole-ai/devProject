@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态代理 iframe</title>
+    <style>
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100vh;
+        }
+        #urlInput {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        #loadButton {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <input type="text" id="urlInput" placeholder="输入要访问的网址" value="https://www.bilibili.com">
+        <button id="loadButton">加载</button>
+    </div>
+    <iframe id="proxyFrame"></iframe>
+</body>
+<script>
+    const iframe = document.querySelector('#proxyFrame');
+    const urlInput = document.querySelector('#urlInput');
+    const loadButton = document.querySelector('#loadButton');
+
+    function loadUrl() {
+        const targetUrl = encodeURIComponent(urlInput.value);
+        iframe.src = `http://localhost:3000?url=${targetUrl}`;
+    }
+
+    loadButton.addEventListener('click', loadUrl);
+    urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            loadUrl();
+        }
+    });
+
+    // 初始加载
+    loadUrl();
+
+    iframe.onload = function() {
+        console.log('iframe loaded');
+    }
+</script>
+</html>
