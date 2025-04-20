@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单相机</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        
+        img {
+            max-width: 90%;
+            max-height: 300px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>相机测试</h1>
+    <button onclick="takePhoto()">点击拍照</button>
+    <img id="photo">
+    
+    <script>
+        function takePhoto() {
+            if (window.Android) {
+                // 调用Android接口
+                Android.takePhoto();
+            } else {
+                alert('此功能仅在Android设备上可用');
+            }
+        }
+        
+        // 用于从Android接收图片数据
+        function showImage(base64data) {
+            document.getElementById('photo').src = 'data:image/jpeg;base64,' + base64data;
+            document.getElementById('photo').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
