@@ -1,97 +1,17 @@
 <template>
-  <div class="content-container">
-    <el-form :model="form" class="search-content" label-width="auto" label-position="top">
-      <el-row :gutter="20" class="search-row">
-        <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item label="Activity name">
-            <el-input v-model="form.name" placeholder="Please input name" />
-          </el-form-item>
-        </el-col>
-        
-        <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item label="Start Date">
-            <el-date-picker
-              v-model="form.startDate"
-              type="date"
-              placeholder="Select date"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        
-        <el-col :xs="12" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item label="End Date">
-            <el-date-picker
-              v-model="form.endDate"
-              type="date"
-              placeholder="Select date"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        
-        <el-col :xs="12" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item label="Status">
-            <el-select v-model="form.status" placeholder="Select status" style="width: 100%">
-              <el-option label="Active" value="active" />
-              <el-option label="Inactive" value="inactive" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        
-        <el-col :xs="12" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item label="Category">
-            <el-select v-model="form.category" placeholder="Select category" style="width: 100%">
-              <el-option label="Category 1" value="category1" />
-              <el-option label="Category 2" value="category2" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        
-        <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item label="Priority">
-            <el-select v-model="form.priority" placeholder="Select priority" style="width: 100%">
-              <el-option label="High" value="high" />
-              <el-option label="Medium" value="medium" />
-              <el-option label="Low" value="low" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        
-        <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item label="Time Range">
-            <el-time-picker
-              v-model="form.time"
-              is-range
-              range-separator="To"
-              start-placeholder="Start time"
-              end-placeholder="End time"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        
-        <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="4" class="form-col">
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch">搜索</el-button>
-            <el-button type="info" @click="handleReset">重置</el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-    <div class="content">
-      <el-table :data="tableData">
-        <el-table-column prop="id" label="名称"></el-table-column>
-      </el-table>
-    </div>
-  </div>
+<div class="layout">
+  <p @click="handelClick()">layout界面 </p>
+  <router-view></router-view>
+</div>
 </template>
 
 <script setup>
 import { getList } from '@/api/test'
 import { getStudent } from '@/api/student'
 import { ref } from 'vue'
-
+// import {router} from 'vue-router'
+ import { useRouter, useRoute } from 'vue-router'
+ const router = useRouter()
 const form = ref({
   name: '',
   startDate: '',
@@ -105,9 +25,14 @@ const form = ref({
 const tableData = ref([])
 
 const getList1 = async () => {
-  const res = await getStudent()
-  console.log(res.data)
-  tableData.value = res.data
+  try{
+    const res = await getStudent()
+  }catch{
+    console.log("请求失败");
+    
+  }
+  // console.log(res.data)
+  // tableData.value = res.data
 }
 
 const handleSearch = () => {
@@ -125,7 +50,9 @@ const handleReset = () => {
     time: ''
   }
 }
-
+const handelClick=()=>{
+  router.push('layout/detail')
+}
 getList1()
 </script>
 

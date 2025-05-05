@@ -18,9 +18,14 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/',
+    path: '/layout',
     component: () => import('@/views/content/index.vue'),
-    hidden: true
+    children:[
+      {
+        path: 'detail',
+        component: () => import('@/views/detail.vue'),
+      },
+    ]
   }
 ]
 
