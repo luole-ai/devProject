@@ -1,5 +1,6 @@
 <template>
     <div class="login-container">
+      <BarChart />
       <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" class="login-form" autocomplete="on" label-position="left">
         <!-- <div class="title-container">
           <h3 class="title">后台管理系统</h3>
@@ -66,10 +67,12 @@
   import { ElMessage } from 'element-plus'
   import { Delete } from '@element-plus/icons-vue'
   import {router} from 'vue-router'
+  import BarChart from '@/components/BarChart.vue'
   export default {
     name: 'Login',
     components: {
-      Delete
+      Delete,
+      BarChart
     },
     setup() {
       const fn = (event) => {
