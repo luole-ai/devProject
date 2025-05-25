@@ -5,6 +5,7 @@
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'BarChart',
@@ -49,6 +50,11 @@ export default {
                 show: true,
                 position: 'top',
                 formatter: '{c}%'
+              },
+              itemStyle: {
+                color: function(params) {
+                  return params.value >= 50 ? '#67C23A' : '#F56C6C'
+                }
               }
             },
             {
@@ -77,6 +83,20 @@ export default {
         }
 
         chart.setOption(option)
+
+        // 添加点击事件监听
+        chart.on('click', function(params) {
+          if (params.componentType === 'series' && params.seriesType === 'bar') {
+            const category = params.name
+            const value = params.value
+            ElMessage({
+              message: `选中类别: ${category}, 数值: ${value}%`,
+              type: 'info'
+            })
+            // 这里可以触发自定义事件，将选中的类别信息传递给父组件
+            // emit('category-selected', { category, value })
+          }
+        })
       }
     }
 
