@@ -28,6 +28,7 @@
     "axios": "^1.8.4",
     "echarts": "^5.6.0",
     "element-plus": "^2.9.7",
+    "encryptlong": "^3.1.4",
     "nprogress": "^0.2.0",
     "path-browserify": "^1.0.1",
     "three": "^0.177.0",

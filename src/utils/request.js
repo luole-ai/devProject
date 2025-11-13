@@ -90,6 +90,7 @@ export default myAxios;
 export const localRequest = myAxios(defaultConfig, defaultOptions, defaultLoadingOptions);
 export const ivsRequest = myAxios({baseURL:"http:ivs.aliyun.com/cart"})
 export const mockRequest = myAxios({baseURL:"http://localhost:4000/api/"},{loading:true})
+export const xibuyjRequest = myAxios({baseURL:"/api"},{loading:true})
 /**
  * 处理异常
  * @param {*} error 

@@ -26,16 +26,11 @@ const mutations = {
 const actions = {
   // 用户登录
   login({ commit }, userInfo) {
-    const { username, password } = userInfo
-    return new Promise((resolve, reject) => {
-      login({ username: username.trim(), password: password }).then(response => {
-        const { data } = response
-        commit('SET_TOKEN', data.token)
-        setToken(data.token)
-        resolve()
-      }).catch(error => {
-        reject(error)
-      })
+    return login(userInfo).then(response => {
+      const { data } = response
+      commit('SET_TOKEN', data.token)
+      setToken(data.token)
+      return data
     })
   },
 

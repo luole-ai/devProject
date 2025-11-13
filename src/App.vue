@@ -1,9 +1,9 @@
 <template>
   <div id="app">
     <router-view />
-    <FloatingBall @menu-item-click="handleMenuItemClick" />
+    <!-- <FloatingBall @menu-item-click="handleMenuItemClick" />
     <HeroBoard3D />
-    <CircularMotion />
+    <CircularMotion /> -->
   </div>
 </template>
 

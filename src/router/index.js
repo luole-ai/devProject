@@ -1,16 +1,88 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { defineComponent, h } from 'vue'
 import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress' // 进度条
 import 'nprogress/nprogress.css'
 import { getToken } from '@/utils/auth' // 验证token的方法
 import store from '@/store' // Vuex存储
+import { iframePages } from './iframePages'
+
+const createIframeComponent = page => () =>
+  import('@/views/iframe/IframePage.vue').then(module =>
+    defineComponent({
+      name: `Iframe_${page.key}`,
+      setup(_, { attrs, slots }) {
+        return () => h(module.default, attrs, slots)
+      }
+    })
+  )
+
+const iframeRoutes = iframePages.map(page => ({
+  path: `iframe/${page.key}`,
+  name: `Iframe_${page.key}`,
+  component: createIframeComponent(page),
+  meta: {
+    title: page.title,
+    keepAlive: true,
+    keepAliveName: `Iframe_${page.key}`,
+    navKey: page.key,
+    iframe: true,
+    iframeUrl: page.url
+  }
+}))
 
 // 静态路由 - 所有用户都可以访问的页面
 export const constantRoutes = [
   {
+    path: '/',
+    redirect: '/layout/home',
+    hidden: true
+  },
+  {
     path: '/login',
     component: () => import('@/views/login/index.vue'),
     hidden: true
+  },
+  {
+    path: '/layout',
+    component: () => import('@/views/content/index.vue'),
+    redirect: '/layout/home',
+    children: [
+      {
+        path: 'home',
+        name: 'LayoutHome',
+        component: () => import('@/views/home/index.vue'),
+        meta: {
+          title: '首页',
+          keepAlive: true,
+          keepAliveName: 'LayoutHome',
+          navKey: 'home'
+        }
+      },
+      {
+        path: 'reports',
+        name: 'LayoutReports',
+        component: () => import('@/views/reports/index.vue'),
+        meta: {
+          title: '报表中心',
+          keepAlive: true,
+          keepAliveName: 'LayoutReports',
+          navKey: 'reports'
+        }
+      },
+      {
+        path: 'workspace',
+        name: 'LayoutWorkspace',
+        component: () => import('@/views/workspace/index.vue'),
+        meta: {
+          title: '工作台',
+          keepAlive: true,
+          keepAliveName: 'LayoutWorkspace',
+          navKey: 'workspace'
+        }
+      },
+      ...iframeRoutes
+    ]
   },
   {
     path: '/404',
@@ -18,14 +90,9 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/layout',
-    component: () => import('@/views/content/index.vue'),
-    children:[
-      {
-        path: 'detail',
-        component: () => import('@/views/detail.vue'),
-      },
-    ]
+    path: '/:pathMatch(.*)*',
+    redirect: '/404',
+    hidden: true
   }
 ]
 

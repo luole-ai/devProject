@@ -27,12 +27,18 @@ module.exports = defineConfig({
   // 配置开发服务器
   devServer: {
     proxy: {
-    '/api': {
-    target: 'http://localhost:8080/',
-    changeOrigin: true,
-    pathRewrite: { '^/api': '' }
+      '/api': {
+        target: 'http://123.57.161.52:10150',
+        changeOrigin: true,
+        secure: false,
+        pathRewrite: { '^/api': '' },
+        onProxyReq(proxyReq) {
+          proxyReq.setHeader('origin', 'https://xibuyj.com');
+          proxyReq.setHeader('referer', 'https://xibuyj.com/');
+        },
+        cookieDomainRewrite: 'localhost'
+      }
     }
-    }
-    }
+  }
 });
 
