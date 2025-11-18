@@ -1,10 +1,9 @@
 <template>
-  <input type="text">
   <div class="iframe-container">
     <iframe
       class="iframe-page"
-      :title="route.meta.title || '外部页面'"
-      :src="currentUrl"
+      :title="title"
+      :src="src"
       frameborder="0"
       allowfullscreen
     />
@@ -12,16 +11,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-
-defineOptions({
-  name: 'IframeBase'
+defineProps({
+  src: {
+    type: String,
+    default: ''
+  },
+  title: {
+    type: String,
+    default: '外部页面'
+  }
 })
-console.log(123)
-const route = useRoute()
-
-const currentUrl = computed(() => route.meta.iframeUrl || route.query.src || '')
 </script>
 
 <style scoped>

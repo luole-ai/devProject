@@ -1,5 +1,7 @@
 <template>
+
   <div class="layout-shell">
+    {{ isActiveIframe }} {{ activeTab }}
     <header class="layout-header">
       <div class="layout-brand">企业管理系统</div>
       <el-menu
@@ -36,16 +38,25 @@
     </section>
 
     <section class="layout-content">
-      <router-view v-slot="{ Component, route }">
-        <!-- <transition name="fade" mode="out-in"> -->
-            <keep-alive :include="cachedComponentNames">
-              <component
-                :is="Component"
-                :key="route.meta.keepAliveName || route.name || route.fullPath"
-              />
+      <div class="content-router" v-show="!isActiveIframe">
+        <router-view v-slot="{ Component, route }">
+          <keep-alive :include="cachedComponentNames">
+            <component
+              :is="Component"
+              :key="route.meta.keepAliveName || route.name || route.fullPath"
+            />
           </keep-alive>
-        <!-- </transition> -->
-      </router-view>
+        </router-view>
+      </div>
+      <div class="content-iframes" v-show="isActiveIframe">
+        <IframePage
+          v-for="panel in iframePanels"
+          :key="panel.name"
+          :src="panel.src"
+          :title="panel.title"
+          v-show="activeTab === panel.fullPath"
+        />
+      </div>
     </section>
   </div>
 </template>
@@ -55,6 +66,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { ElMenu, ElMenuItem, ElTabPane, ElTabs } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { iframePages } from '@/router/iframePages'
+import IframePage from '@/views/iframe/IframePage.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -95,6 +107,7 @@ const navItems = [...baseNavItems, ...iframeNavItems]
 const tabs = ref([])
 const cachedComponentNames = ref([])
 const activeTab = ref('')
+const iframePanels = ref([])
 
 const activeNav = computed(() => {
   const current = navItems.find(item => route.path.startsWith(item.path))
@@ -119,11 +132,22 @@ const ensureTabExists = to => {
       fullPath: to.fullPath,
       path: to.path,
       name: cacheName,
-      closable: to.meta?.closable !== false && navItem?.closable !== false
+      closable: to.meta?.closable !== false && navItem?.closable !== false,
+      iframe: !!(to.meta?.iframe || navItem?.iframe)
     })
   }
 
-  if (
+  if (to.meta?.iframe || navItem?.iframe) {
+    const exists = iframePanels.value.find(panel => panel.fullPath === to.fullPath)
+    if (!exists) {
+      iframePanels.value.push({
+        name: cacheName,
+        title,
+        src: to.meta?.iframeUrl || navItem?.iframeUrl || to.query?.src || '',
+        fullPath: to.fullPath
+      })
+    }
+  } else if (
     (to.meta?.keepAlive || navItem?.cacheName) &&
     cacheName &&
     !cachedComponentNames.value.includes(cacheName)
@@ -144,6 +168,12 @@ const handleTabRemove = paneName => {
   if (tabIndex === -1) return
 
   const [removed] = tabs.value.splice(tabIndex, 1)
+  if (removed?.iframe) {
+    const iframeIndex = iframePanels.value.findIndex(panel => panel.fullPath === removed.fullPath)
+    if (iframeIndex > -1) {
+      iframePanels.value.splice(iframeIndex, 1)
+    }
+  }
   if (removed?.name && !tabs.value.some(item => item.name === removed.name)) {
     const cacheIndex = cachedComponentNames.value.indexOf(removed.name)
     if (cacheIndex > -1) {
@@ -179,6 +209,9 @@ watch(activeTab, value => {
     router.push(value)
   }
 })
+
+const activeTabInfo = computed(() => tabs.value.find(tab => tab.fullPath === activeTab.value))
+const isActiveIframe = computed(() => !!activeTabInfo.value?.iframe)
 
 onMounted(() => {
   ensureTabExists(route)
@@ -218,8 +251,27 @@ onMounted(() => {
 
 .layout-content {
   flex: 1;
+  position: relative;
   padding: 24px;
+  overflow: hidden;
+}
+
+.content-router,
+.content-iframes {
+  position: absolute;
+  inset: 24px;
+  width: auto;
+  height: auto;
+}
+
+.content-router {
   overflow: auto;
+}
+
+.content-iframes {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 .fade-enter-active,
