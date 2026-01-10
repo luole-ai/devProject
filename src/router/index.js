@@ -39,6 +39,16 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/data-visualization',
+    component: () => import('@/views/data-visualization/index.vue'),
+    meta: {
+      title: '数据可视化',
+      keepAlive: true,
+      keepAliveName: 'DataVisualization',
+      navKey: 'data-visualization'
+    }
+  },
+  {
     path: '/login',
     component: () => import('@/views/login/index.vue'),
     hidden: true
@@ -79,6 +89,17 @@ export const constantRoutes = [
           keepAlive: true,
           keepAliveName: 'LayoutWorkspace',
           navKey: 'workspace'
+        }
+      },
+      {
+        path: 'shift-handover',
+        name: 'ShiftHandover',
+        component: () => import('@/views/shift-handover/index.vue'),
+        meta: {
+          title: '班次交接',
+          keepAlive: true,
+          keepAliveName: 'ShiftHandover',
+          navKey: 'shift-handover'
         }
       },
       ...iframeRoutes

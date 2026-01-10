@@ -1,0 +1,290 @@
+// 模拟班次交接数据
+
+// 模拟员工数据
+const employees = {
+  'A12345678': { name: '张三', id: 'A12345678' },
+  'B12345678': { name: '李四', id: 'B12345678' },
+  'C12345678': { name: '王五', id: 'C12345678' },
+  'D12345678': { name: '赵六', id: 'D12345678' }
+}
+
+// 模拟任务数据存储
+let tasks = [
+  {
+    id: 1,
+    type: 'memo',
+    title: '今日工作备忘',
+    content: '1. 完成系统测试\n2. 提交代码审查\n3. 准备明日会议材料',
+    createTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    updateTime: null,
+    isRead: true,
+    handoverFromId: null,
+    handoverFromName: null,
+    handoverToId: null,
+    handoverToName: null
+  },
+  {
+    id: 2,
+    type: 'task',
+    title: '设备维护任务交接',
+    content: '设备A需要定期维护，请在下班前完成检查',
+    createTime: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    updateTime: null,
+    isRead: false,
+    handoverFromId: 'A12345678',
+    handoverFromName: '张三',
+    handoverToId: 'B12345678',
+    handoverToName: '李四'
+  },
+  {
+    id: 3,
+    type: 'task',
+    title: '客户反馈处理',
+    content: '客户反馈的问题已解决，需要跟进确认',
+    createTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    updateTime: null,
+    isRead: false,
+    handoverFromId: 'C12345678',
+    handoverFromName: '王五',
+    handoverToId: 'A12345678',
+    handoverToName: '张三'
+  }
+]
+
+let nextId = 4
+
+// 获取任务列表
+export function mockGetTaskList(params) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const currentUserId = 'A12345678' // 模拟当前用户ID
+      
+      const myTasks = tasks.filter(task => 
+        task.handoverFromId === currentUserId || 
+        (task.handoverFromId === null && task.handoverToId === null)
+      )
+      
+      const handoverTasks = tasks.filter(task => 
+        task.type === 'task' && 
+        task.handoverFromId === currentUserId && 
+        task.handoverToId !== null
+      )
+      
+      const handoveredTasks = tasks.filter(task => 
+        task.type === 'task' && 
+        task.handoverToId === currentUserId
+      )
+      
+      resolve({
+        code: 200,
+        message: '获取成功',
+        data: {
+          myTasks,
+          handoverTasks,
+          handoveredTasks
+        }
+      })
+    }, 300)
+  })
+}
+
+// 获取任务详情
+export function mockGetTaskDetail(id) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const task = tasks.find(t => t.id === parseInt(id))
+      if (task) {
+        resolve({
+          code: 200,
+          message: '获取成功',
+          data: task
+        })
+      } else {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+      }
+    }, 300)
+  })
+}
+
+// 创建备忘录
+export function mockCreateMemo(data) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const newTask = {
+        id: nextId++,
+        type: 'memo',
+        title: data.title,
+        content: data.content,
+        createTime: new Date().toISOString(),
+        updateTime: null,
+        isRead: true,
+        handoverFromId: null,
+        handoverFromName: null,
+        handoverToId: null,
+        handoverToName: null
+      }
+      tasks.push(newTask)
+      
+      resolve({
+        code: 200,
+        message: '创建成功',
+        data: newTask
+      })
+    }, 300)
+  })
+}
+
+// 创建任务交接
+export function mockCreateTaskHandover(data) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const employee = employees[data.handoverToId]
+      if (!employee) {
+        reject({
+          code: 400,
+          message: '交接人工号不存在'
+        })
+        return
+      }
+      
+      const currentUserId = 'A12345678' // 模拟当前用户ID
+      const currentUserName = employees[currentUserId]?.name || '当前用户'
+      
+      const newTask = {
+        id: nextId++,
+        type: 'task',
+        title: data.title,
+        content: data.content,
+        createTime: new Date().toISOString(),
+        updateTime: null,
+        isRead: false,
+        handoverFromId: currentUserId,
+        handoverFromName: currentUserName,
+        handoverToId: data.handoverToId,
+        handoverToName: employee.name
+      }
+      tasks.push(newTask)
+      
+      resolve({
+        code: 200,
+        message: '创建成功',
+        data: newTask
+      })
+    }, 300)
+  })
+}
+
+// 更新任务交接
+export function mockUpdateTaskHandover(id, data) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const taskIndex = tasks.findIndex(t => t.id === parseInt(id))
+      if (taskIndex === -1) {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+        return
+      }
+      
+      const task = tasks[taskIndex]
+      
+      // 如果更新了交接人，需要验证
+      if (data.handoverToId && data.handoverToId !== task.handoverToId) {
+        const employee = employees[data.handoverToId]
+        if (!employee) {
+          reject({
+            code: 400,
+            message: '交接人工号不存在'
+          })
+          return
+        }
+        task.handoverToId = data.handoverToId
+        task.handoverToName = employee.name
+        task.isRead = false // 更新后标记为未读
+      }
+      
+      task.title = data.title || task.title
+      task.content = data.content || task.content
+      task.updateTime = new Date().toISOString()
+      
+      resolve({
+        code: 200,
+        message: '更新成功',
+        data: task
+      })
+    }, 300)
+  })
+}
+
+// 根据工号查询员工姓名
+export function mockGetEmployeeName(employeeId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const employee = employees[employeeId]
+      if (employee) {
+        resolve({
+          code: 200,
+          message: '查询成功',
+          data: {
+            id: employee.id,
+            name: employee.name
+          }
+        })
+      } else {
+        reject({
+          code: 404,
+          message: '未找到该工号对应的员工'
+        })
+      }
+    }, 300)
+  })
+}
+
+// 标记任务为已读
+export function mockMarkTaskAsRead(id) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const task = tasks.find(t => t.id === parseInt(id))
+      if (task) {
+        task.isRead = true
+        resolve({
+          code: 200,
+          message: '标记成功',
+          data: task
+        })
+      } else {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+      }
+    }, 300)
+  })
+}
+
+// 删除任务
+export function mockDeleteTask(id) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const taskIndex = tasks.findIndex(t => t.id === parseInt(id))
+      if (taskIndex === -1) {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+        return
+      }
+      
+      tasks.splice(taskIndex, 1)
+      resolve({
+        code: 200,
+        message: '删除成功'
+      })
+    }, 300)
+  })
+}
+
