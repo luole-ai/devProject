@@ -53,6 +53,39 @@ let tasks = [
 
 let nextId = 4
 
+// 模拟沟通记录数据存储
+let comments = [
+  {
+    id: 1,
+    taskId: 2,
+    content: '收到，我会在下班前完成设备检查',
+    createTime: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+    userId: 'B12345678',
+    userName: '李四',
+    userRole: 'handoverTo' // handoverFrom: 发布者, handoverTo: 被交接者
+  },
+  {
+    id: 2,
+    taskId: 2,
+    content: '好的，检查完成后请告知我结果',
+    createTime: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    userId: 'A12345678',
+    userName: '张三',
+    userRole: 'handoverFrom'
+  },
+  {
+    id: 3,
+    taskId: 3,
+    content: '收到，我会尽快跟进确认',
+    createTime: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    userId: 'A12345678',
+    userName: '张三',
+    userRole: 'handoverTo'
+  }
+]
+
+let nextCommentId = 4
+
 // 获取任务列表
 export function mockGetTaskList(params) {
   return new Promise((resolve) => {
@@ -280,6 +313,9 @@ export function mockDeleteTask(id) {
       }
       
       tasks.splice(taskIndex, 1)
+      // 同时删除该任务的所有沟通记录
+      comments = comments.filter(c => c.taskId !== parseInt(id))
+      
       resolve({
         code: 200,
         message: '删除成功'
@@ -287,4 +323,90 @@ export function mockDeleteTask(id) {
     }, 300)
   })
 }
+
+// 获取任务沟通记录
+export function mockGetTaskComments(taskId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const task = tasks.find(t => t.id === parseInt(taskId))
+      if (!task) {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+        return
+      }
+      
+      const taskComments = comments
+        .filter(c => c.taskId === parseInt(taskId))
+        .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
+      
+      resolve({
+        code: 200,
+        message: '获取成功',
+        data: taskComments
+      })
+    }, 300)
+  })
+}
+
+// 添加任务反馈/沟通记录
+export function mockAddTaskComment(taskId, data) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const task = tasks.find(t => t.id === parseInt(taskId))
+      if (!task) {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+        return
+      }
+      
+      const currentUserId = 'A12345678' // 模拟当前用户ID
+      const currentUserName = employees[currentUserId]?.name || '当前用户'
+      
+      // 判断当前用户角色
+      let userRole = 'handoverFrom'
+      if (task.handoverToId === currentUserId) {
+        userRole = 'handoverTo'
+      } else if (task.handoverFromId === currentUserId) {
+        userRole = 'handoverFrom'
+      } else if (task.type === 'memo') {
+        // 备忘录只有创建者可以评论
+        userRole = 'handoverFrom'
+      }
+      
+      const newComment = {
+        id: nextCommentId++,
+        taskId: parseInt(taskId),
+        content: data.content,
+        createTime: new Date().toISOString(),
+        userId: currentUserId,
+        userName: currentUserName,
+        userRole: userRole
+      }
+      
+      comments.push(newComment)
+      
+      // 如果是任务交接，标记任务为未读（给对方）
+      if (task.type === 'task') {
+        if (userRole === 'handoverFrom') {
+          // 发布者回复，被交接者未读
+          task.isRead = false
+        } else {
+          // 被交接者回复，发布者未读（这里需要根据实际情况判断）
+          // 暂时不处理，因为isRead是全局的
+        }
+      }
+      
+      resolve({
+        code: 200,
+        message: '添加成功',
+        data: newComment
+      })
+    }, 300)
+  })
+}
+
 

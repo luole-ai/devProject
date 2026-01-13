@@ -49,7 +49,7 @@ body {
 #app {
   min-height: 100vh;
   background: #222;
-  display: flex;
+  /* display: flex; */
   align-items: center;
   justify-content: center;
 }

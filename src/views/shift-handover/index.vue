@@ -89,18 +89,17 @@
         </el-tabs>
       </div>
 
-      <!-- 右侧详情/编辑区域 -->
+      <!-- 右侧详情/沟通记录区域 -->
       <div class="detail-panel">
         <div v-if="!selectedTask && !isCreating" class="empty-detail">
           <el-empty description="请选择任务或新建任务" :image-size="120" />
         </div>
 
-        <div v-else class="detail-content">
+        <!-- 新建任务表单 -->
+        <div v-else-if="isCreating" class="detail-content">
           <div class="detail-header">
-            <h3>{{ isCreating ? '新建' : '详情' }}</h3>
+            <h3>新建</h3>
             <div class="header-actions">
-              <el-button v-if="selectedTask && !isCreating" @click="handleEdit">编辑</el-button>
-              <el-button v-if="selectedTask && !isCreating" type="danger" @click="handleDelete">删除</el-button>
               <el-button @click="handleCancel">取消</el-button>
             </div>
           </div>
@@ -113,7 +112,7 @@
             class="detail-form"
           >
             <el-form-item label="类型" prop="type">
-              <el-radio-group v-model="formData.type" :disabled="!isEditing && !isCreating">
+              <el-radio-group v-model="formData.type">
                 <el-radio label="memo">备忘录</el-radio>
                 <el-radio label="task">任务交接</el-radio>
               </el-radio-group>
@@ -123,7 +122,6 @@
               <el-input
                 v-model="formData.title"
                 placeholder="请输入标题"
-                :disabled="!isEditing && !isCreating"
                 maxlength="100"
                 show-word-limit
               />
@@ -135,7 +133,6 @@
                 type="textarea"
                 :rows="8"
                 placeholder="请输入内容"
-                :disabled="!isEditing && !isCreating"
                 maxlength="1000"
                 show-word-limit
               />
@@ -149,7 +146,6 @@
               <el-input
                 v-model="formData.handoverToId"
                 placeholder="请输入交接人工号（字母开头+8位数字）"
-                :disabled="!isEditing && !isCreating"
                 @blur="handleEmployeeIdBlur"
                 maxlength="9"
               >
@@ -172,38 +168,112 @@
               />
             </el-form-item>
 
-            <!-- 详情模式下的额外信息 -->
-            <template v-if="selectedTask && !isEditing && !isCreating">
-              <el-form-item label="状态">
-                <el-tag :type="selectedTask.isRead ? 'success' : 'danger'">
-                  {{ selectedTask.isRead ? '已读' : '未读' }}
-                </el-tag>
-              </el-form-item>
-
-              <el-form-item v-if="selectedTask.handoverFromName" label="交接人">
-                <span>{{ selectedTask.handoverFromName }}</span>
-              </el-form-item>
-
-              <el-form-item v-if="selectedTask.handoverToName" label="被交接人">
-                <span>{{ selectedTask.handoverToName }}</span>
-              </el-form-item>
-
-              <el-form-item label="创建时间">
-                <span>{{ formatTime(selectedTask.createTime) }}</span>
-              </el-form-item>
-
-              <el-form-item v-if="selectedTask.updateTime" label="更新时间">
-                <span>{{ formatTime(selectedTask.updateTime) }}</span>
-              </el-form-item>
-            </template>
-
-            <el-form-item v-if="isEditing || isCreating">
+            <el-form-item>
               <el-button type="primary" @click="handleSubmit" :loading="submitting">
                 提交
               </el-button>
               <el-button @click="handleCancel">取消</el-button>
             </el-form-item>
           </el-form>
+        </div>
+
+        <!-- 任务沟通记录区域 -->
+        <div v-else-if="selectedTask" class="detail-content">
+          <div class="detail-header">
+            <h3>{{ selectedTask.title || '任务详情' }}</h3>
+            <div class="header-actions">
+              <el-button type="danger" @click="handleDelete">删除</el-button>
+            </div>
+          </div>
+
+          <div class="task-info-section">
+            <div class="info-item">
+              <span class="info-label">类型：</span>
+              <el-tag :type="selectedTask.type === 'memo' ? 'info' : 'primary'">
+                {{ selectedTask.type === 'memo' ? '备忘录' : '任务交接' }}
+              </el-tag>
+            </div>
+            <div class="info-item">
+              <span class="info-label">状态：</span>
+              <el-tag :type="selectedTask.isRead ? 'success' : 'danger'">
+                {{ selectedTask.isRead ? '已读' : '未读' }}
+              </el-tag>
+            </div>
+            <div v-if="selectedTask.handoverFromName" class="info-item">
+              <span class="info-label">交接人：</span>
+              <span>{{ selectedTask.handoverFromName }}</span>
+            </div>
+            <div v-if="selectedTask.handoverToName" class="info-item">
+              <span class="info-label">被交接人：</span>
+              <span>{{ selectedTask.handoverToName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">创建时间：</span>
+              <span>{{ formatTime(selectedTask.createTime) }}</span>
+            </div>
+          </div>
+
+          <div class="task-content-section">
+            <div class="content-label">任务内容：</div>
+            <div class="content-text">{{ selectedTask.content }}</div>
+          </div>
+
+          <!-- 沟通记录区域（仅任务交接类型显示） -->
+          <div v-if="selectedTask.type === 'task'" class="comments-section">
+            <div class="comments-header">
+              <h4>沟通记录</h4>
+            </div>
+            
+            <div class="comments-list" ref="commentsListRef">
+              <div
+                v-for="comment in taskComments"
+                :key="comment.id"
+                class="comment-item"
+                :class="{ 'is-own': isOwnComment(comment) }"
+              >
+                <div class="comment-header">
+                  <span class="comment-author">{{ comment.userName }}</span>
+                  <span class="comment-role">
+                    <el-tag size="small" :type="comment.userRole === 'handoverFrom' ? 'primary' : 'success'">
+                      {{ comment.userRole === 'handoverFrom' ? '发布者' : '被交接者' }}
+                    </el-tag>
+                  </span>
+                  <span class="comment-time">{{ formatTime(comment.createTime) }}</span>
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
+              </div>
+              <el-empty v-if="taskComments.length === 0" description="暂无沟通记录" :image-size="80" />
+            </div>
+
+            <!-- 反馈输入区域 -->
+            <div class="comment-input-section">
+              <el-input
+                v-model="commentContent"
+                type="textarea"
+                :rows="4"
+                placeholder="请输入反馈内容..."
+                maxlength="500"
+                show-word-limit
+                @keydown.ctrl.enter="handleSubmitComment"
+              />
+              <div class="comment-actions">
+                <el-button type="primary" @click="handleSubmitComment" :loading="submittingComment">
+                  发送反馈
+                </el-button>
+                <span class="tip-text">Ctrl + Enter 快速发送</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 备忘录类型显示提示 -->
+          <div v-else class="memo-tip">
+            <el-alert
+              title="备忘录"
+              description="备忘录类型不支持沟通功能"
+              type="info"
+              :closable="false"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -222,7 +292,9 @@ import {
   updateTaskHandover,
   getEmployeeName,
   markTaskAsRead,
-  deleteTask
+  deleteTask,
+  getTaskComments,
+  addTaskComment
 } from '@/api/shiftHandover'
 
 defineOptions({
@@ -233,15 +305,23 @@ defineOptions({
 const activeTab = ref('my')
 const selectedTask = ref(null)
 const isCreating = ref(false)
-const isEditing = ref(false)
 const submitting = ref(false)
 const loadingEmployeeName = ref(false)
 const formRef = ref(null)
+const commentsListRef = ref(null)
 
 // 任务列表
 const myTasks = ref([])
 const handoverTasks = ref([])
 const handoveredTasks = ref([])
+
+// 沟通记录相关
+const taskComments = ref([])
+const commentContent = ref('')
+const submittingComment = ref(false)
+
+// 当前用户ID（实际应该从store或token中获取）
+const currentUserId = ref('A12345678')
 
 // 表单数据
 const formData = reactive({
@@ -276,16 +356,20 @@ const isCreatingOrEditing = computed(() => isCreating.value || isEditing.value)
 // 方法
 const loadTaskList = async () => {
   try {
-    const res = await getTaskList({ type: activeTab.value })
+    // 加载所有任务列表数据，不传type参数或传空参数
+    const res = await getTaskList({})
+    console.log('获取任务列表响应:', res)
     
-    // 根据当前tab更新对应的任务列表
-    if (activeTab.value === 'my') {
-      myTasks.value = res.data?.myTasks || []
-    } else if (activeTab.value === 'handover') {
-      handoverTasks.value = res.data?.handoverTasks || []
-    } else if (activeTab.value === 'handovered') {
-      handoveredTasks.value = res.data?.handoveredTasks || []
-    }
+    // mock函数直接返回Promise，不经过axios拦截器，所以res就是{code, message, data}
+    // 同时更新所有三个任务列表
+    const data = res?.data || res || {}
+    myTasks.value = data.myTasks || []
+    handoverTasks.value = data.handoverTasks || []
+    handoveredTasks.value = data.handoveredTasks || []
+    
+    console.log('我的任务:', myTasks.value)
+    console.log('交接任务:', handoverTasks.value)
+    console.log('被交接任务:', handoveredTasks.value)
   } catch (error) {
     console.error('加载任务列表失败:', error)
     ElMessage.error('加载任务列表失败')
@@ -295,7 +379,8 @@ const loadTaskList = async () => {
 const handleTabChange = () => {
   selectedTask.value = null
   isCreating.value = false
-  isEditing.value = false
+  taskComments.value = []
+  commentContent.value = ''
   loadTaskList()
 }
 
@@ -309,47 +394,101 @@ const handleSelectTask = async (task) => {
 
     // 加载任务详情
     const res = await getTaskDetail(task.id)
-    selectedTask.value = res.data || task
+    console.log('获取任务详情响应:', res)
+    selectedTask.value = res?.data || res || task
     isCreating.value = false
-    isEditing.value = false
     
-    // 重置表单
-    resetForm()
+    // 如果是任务交接类型，加载沟通记录
+    if (selectedTask.value.type === 'task') {
+      await loadTaskComments(task.id)
+    } else {
+      taskComments.value = []
+    }
   } catch (error) {
     console.error('加载任务详情失败:', error)
     ElMessage.error('加载任务详情失败')
   }
 }
 
+// 加载任务沟通记录
+const loadTaskComments = async (taskId) => {
+  try {
+    const res = await getTaskComments(taskId)
+    console.log('获取沟通记录响应:', res)
+    taskComments.value = res?.data || res || []
+    
+    // 滚动到底部
+    setTimeout(() => {
+      if (commentsListRef.value) {
+        commentsListRef.value.scrollTop = commentsListRef.value.scrollHeight
+      }
+    }, 100)
+  } catch (error) {
+    console.error('加载沟通记录失败:', error)
+    ElMessage.error('加载沟通记录失败')
+  }
+}
+
+// 判断是否是自己的评论
+const isOwnComment = (comment) => {
+  return comment.userId === currentUserId.value
+}
+
+// 提交反馈
+const handleSubmitComment = async () => {
+  if (!selectedTask.value) return
+  
+  const content = commentContent.value?.trim()
+  if (!content) {
+    ElMessage.warning('请输入反馈内容')
+    return
+  }
+
+  try {
+    submittingComment.value = true
+    const res = await addTaskComment(selectedTask.value.id, { content })
+    
+    // 添加到沟通记录列表
+    const newComment = res?.data || res
+    if (newComment) {
+      taskComments.value.push(newComment)
+    }
+    
+    // 清空输入框
+    commentContent.value = ''
+    
+    ElMessage.success('反馈发送成功')
+    
+    // 滚动到底部
+    setTimeout(() => {
+      if (commentsListRef.value) {
+        commentsListRef.value.scrollTop = commentsListRef.value.scrollHeight
+      }
+    }, 100)
+  } catch (error) {
+    console.error('发送反馈失败:', error)
+    ElMessage.error('发送反馈失败')
+  } finally {
+    submittingComment.value = false
+  }
+}
+
 const handleCreateNew = () => {
   selectedTask.value = null
   isCreating.value = true
-  isEditing.value = false
+  taskComments.value = []
+  commentContent.value = ''
   resetForm()
   formData.type = 'memo'
 }
 
-const handleEdit = () => {
-  if (!selectedTask.value) return
-  
-  isEditing.value = true
-  isCreating.value = false
-  
-  // 填充表单数据
-  formData.type = selectedTask.value.type || 'memo'
-  formData.title = selectedTask.value.title || ''
-  formData.content = selectedTask.value.content || ''
-  formData.handoverToId = selectedTask.value.handoverToId || ''
-  formData.handoverToName = selectedTask.value.handoverToName || ''
-}
-
 const handleCancel = () => {
   isCreating.value = false
-  isEditing.value = false
   resetForm()
+  commentContent.value = ''
   
   if (selectedTask.value) {
-    // 重新加载任务详情
+    // 重新加载任务详情和沟通记录
     handleSelectTask(selectedTask.value)
   }
 }
@@ -382,7 +521,7 @@ const handleEmployeeIdBlur = async () => {
   loadingEmployeeName.value = true
   try {
     const res = await getEmployeeName(employeeId)
-    formData.handoverToName = res.data?.name || ''
+    formData.handoverToName = res?.data?.name || res?.name || ''
     
     if (!formData.handoverToName) {
       ElMessage.warning('未找到该工号对应的员工')
@@ -424,37 +563,26 @@ const handleSubmit = async () => {
     }
 
     let res
-    if (isCreating.value) {
-      // 创建新任务
-      if (formData.type === 'memo') {
-        res = await createMemo(submitData)
-      } else {
-        res = await createTaskHandover(submitData)
-      }
-      ElMessage.success('创建成功')
-    } else if (isEditing.value && selectedTask.value) {
-      // 更新任务
-      res = await updateTaskHandover(selectedTask.value.id, submitData)
-      ElMessage.success('更新成功')
+    // 创建新任务
+    if (formData.type === 'memo') {
+      res = await createMemo(submitData)
+    } else {
+      res = await createTaskHandover(submitData)
     }
+    ElMessage.success('创建成功')
 
-    // 保存创建/编辑状态
-    const wasCreating = isCreating.value
-    const createdTask = res?.data
+    // 保存创建状态
+    const createdTask = res?.data || res
     
     // 重置状态
     isCreating.value = false
-    isEditing.value = false
     
     // 重新加载任务列表
     await loadTaskList()
     
     // 如果创建成功，选中新创建的任务
-    if (wasCreating && createdTask) {
+    if (createdTask) {
       await handleSelectTask(createdTask)
-    } else if (!wasCreating && selectedTask.value) {
-      // 如果是编辑，重新加载当前任务
-      await handleSelectTask(selectedTask.value)
     }
   } catch (error) {
     if (error !== false) { // 表单验证失败会返回false
@@ -482,7 +610,8 @@ const handleDelete = async () => {
     // 重置状态
     selectedTask.value = null
     isCreating.value = false
-    isEditing.value = false
+    taskComments.value = []
+    commentContent.value = ''
     
     // 重新加载任务列表
     await loadTaskList()
@@ -522,19 +651,23 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .shift-handover-page {
-  padding: 20px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background-color: #f5f7fa;
-  min-height: calc(100vh - 160px);
 }
 
 .handover-container {
+  flex: 1;
   display: flex;
-  gap: 20px;
-  height: calc(100vh - 200px);
+  gap: 0;
+  height: 100%;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  min-height: 0; // 重要：允许flex子元素缩小
 }
 
 .task-list-panel {
@@ -564,16 +697,19 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0; // 重要：允许flex子元素缩小
 
     :deep(.el-tabs__header) {
       margin: 0;
       padding: 0 16px;
       border-bottom: 1px solid #e4e7ed;
+      flex-shrink: 0; // 防止header被压缩
     }
 
     :deep(.el-tabs__content) {
       flex: 1;
       overflow: hidden;
+      min-height: 0; // 重要：允许flex子元素缩小
     }
 
     :deep(.el-tab-pane) {
@@ -586,6 +722,7 @@ onMounted(() => {
     padding: 8px;
     height: 100%;
     overflow-y: auto;
+    min-height: 0; // 重要：允许flex子元素缩小
 
     .task-item {
       padding: 12px;
@@ -650,6 +787,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0; // 重要：允许flex子元素缩小
+  min-width: 0; // 防止内容溢出
 
   .empty-detail {
     display: flex;
@@ -663,6 +802,7 @@ onMounted(() => {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
+    min-height: 0; // 重要：允许flex子元素缩小
 
     .detail-header {
       padding: 16px 20px;
@@ -670,6 +810,7 @@ onMounted(() => {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0; // 防止header被压缩
 
       h3 {
         margin: 0;
@@ -688,10 +829,157 @@ onMounted(() => {
       flex: 1;
       padding: 20px;
       overflow-y: auto;
+      min-height: 0; // 重要：允许flex子元素缩小
 
       :deep(.el-form-item__label) {
         font-weight: 500;
       }
+    }
+
+    .task-info-section {
+      padding: 20px;
+      border-bottom: 1px solid #e4e7ed;
+      background-color: #f5f7fa;
+      flex-shrink: 0; // 防止被压缩
+
+      .info-item {
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .info-label {
+          font-weight: 500;
+          color: #606266;
+          margin-right: 8px;
+          min-width: 80px;
+        }
+      }
+    }
+
+    .task-content-section {
+      padding: 20px;
+      border-bottom: 1px solid #e4e7ed;
+      flex-shrink: 0; // 防止被压缩
+
+      .content-label {
+        font-weight: 600;
+        color: #303133;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .content-text {
+        color: #606266;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+    }
+
+    .comments-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0; // 重要：允许flex子元素缩小
+
+      .comments-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e4e7ed;
+        flex-shrink: 0; // 防止header被压缩
+
+        h4 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #303133;
+        }
+      }
+
+      .comments-list {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background-color: #fafafa;
+        min-height: 0; // 重要：允许flex子元素缩小
+
+        .comment-item {
+          margin-bottom: 16px;
+          padding: 12px;
+          background-color: #fff;
+          border-radius: 6px;
+          border: 1px solid #e4e7ed;
+
+          &.is-own {
+            background-color: #ecf5ff;
+            border-color: #b3d8ff;
+          }
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+
+            .comment-author {
+              font-weight: 600;
+              color: #303133;
+              font-size: 14px;
+            }
+
+            .comment-role {
+              flex-shrink: 0;
+            }
+
+            .comment-time {
+              margin-left: auto;
+              font-size: 12px;
+              color: #909399;
+            }
+          }
+
+          .comment-content {
+            color: #606266;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 14px;
+          }
+        }
+      }
+
+      .comment-input-section {
+        padding: 16px 20px;
+        border-top: 1px solid #e4e7ed;
+        background-color: #fff;
+        flex-shrink: 0; // 防止输入区域被压缩
+
+        .comment-actions {
+          margin-top: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .tip-text {
+            font-size: 12px;
+            color: #909399;
+          }
+        }
+      }
+    }
+
+    .memo-tip {
+      padding: 20px;
+      flex-shrink: 0; // 防止被压缩
     }
   }
 }
