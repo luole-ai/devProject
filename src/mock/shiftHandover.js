@@ -62,7 +62,8 @@ let comments = [
     createTime: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
     userId: 'B12345678',
     userName: '李四',
-    userRole: 'handoverTo' // handoverFrom: 发布者, handoverTo: 被交接者
+    userRole: 'handoverTo', // handoverFrom: 发布者, handoverTo: 被交接者
+    isRead: false // 是否已读
   },
   {
     id: 2,
@@ -71,7 +72,8 @@ let comments = [
     createTime: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
     userId: 'A12345678',
     userName: '张三',
-    userRole: 'handoverFrom'
+    userRole: 'handoverFrom',
+    isRead: true
   },
   {
     id: 3,
@@ -80,11 +82,18 @@ let comments = [
     createTime: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
     userId: 'A12345678',
     userName: '张三',
-    userRole: 'handoverTo'
+    userRole: 'handoverTo',
+    isRead: false
   }
 ]
 
 let nextCommentId = 4
+
+// 模拟已读记录：记录用户对每条消息的已读状态
+// 格式：{ userId_taskId_commentId: true }
+let readRecords = {
+  'A12345678_2_2': true // 用户A12345678已读任务2的评论2
+}
 
 // 获取任务列表
 export function mockGetTaskList(params) {
@@ -315,6 +324,12 @@ export function mockDeleteTask(id) {
       tasks.splice(taskIndex, 1)
       // 同时删除该任务的所有沟通记录
       comments = comments.filter(c => c.taskId !== parseInt(id))
+      // 删除相关的已读记录
+      Object.keys(readRecords).forEach(key => {
+        if (key.includes(`_${id}_`)) {
+          delete readRecords[key]
+        }
+      })
       
       resolve({
         code: 200,
@@ -384,7 +399,8 @@ export function mockAddTaskComment(taskId, data) {
         createTime: new Date().toISOString(),
         userId: currentUserId,
         userName: currentUserName,
-        userRole: userRole
+        userRole: userRole,
+        isRead: false // 新消息默认未读
       }
       
       comments.push(newComment)
@@ -404,6 +420,126 @@ export function mockAddTaskComment(taskId, data) {
         code: 200,
         message: '添加成功',
         data: newComment
+      })
+    }, 300)
+  })
+}
+
+// 获取任务的未读消息数量
+export function mockGetUnreadCommentCount(taskId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const task = tasks.find(t => t.id === parseInt(taskId))
+      if (!task) {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+        return
+      }
+      
+      const currentUserId = 'A12345678' // 模拟当前用户ID
+      
+      // 获取该任务的所有评论
+      const taskComments = comments.filter(c => c.taskId === parseInt(taskId))
+      
+      // 计算未读数量：当前用户未读的评论（不是自己发的，且未读）
+      const unreadCount = taskComments.filter(comment => {
+        // 自己发的消息不算未读
+        if (comment.userId === currentUserId) {
+          return false
+        }
+        
+        // 检查是否已读
+        const readKey = `${currentUserId}_${taskId}_${comment.id}`
+        return !readRecords[readKey]
+      }).length
+      
+      resolve({
+        code: 200,
+        message: '获取成功',
+        data: {
+          taskId: parseInt(taskId),
+          unreadCount
+        }
+      })
+    }, 300)
+  })
+}
+
+// 获取所有任务的未读消息数量汇总
+export function mockGetAllUnreadCounts() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const currentUserId = 'A12345678' // 模拟当前用户ID
+      const unreadCounts = {}
+      
+      // 遍历所有任务
+      tasks.forEach(task => {
+        if (task.type === 'task') {
+          const taskComments = comments.filter(c => c.taskId === task.id)
+          const unreadCount = taskComments.filter(comment => {
+            // 自己发的消息不算未读
+            if (comment.userId === currentUserId) {
+              return false
+            }
+            
+            // 检查是否已读
+            const readKey = `${currentUserId}_${task.id}_${comment.id}`
+            return !readRecords[readKey]
+          }).length
+          
+          if (unreadCount > 0) {
+            unreadCounts[task.id] = unreadCount
+          }
+        }
+      })
+      
+      resolve({
+        code: 200,
+        message: '获取成功',
+        data: unreadCounts
+      })
+    }, 300)
+  })
+}
+
+// 标记任务的沟通记录为已读
+export function mockMarkCommentsAsRead(taskId, commentIds) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const task = tasks.find(t => t.id === parseInt(taskId))
+      if (!task) {
+        reject({
+          code: 404,
+          message: '任务不存在'
+        })
+        return
+      }
+      
+      const currentUserId = 'A12345678' // 模拟当前用户ID
+      
+      // 如果传入了commentIds，只标记指定的评论
+      // 如果没有传入，标记该任务的所有未读评论为已读
+      const commentsToMark = commentIds && commentIds.length > 0
+        ? commentIds
+        : comments
+            .filter(c => c.taskId === parseInt(taskId) && c.userId !== currentUserId)
+            .map(c => c.id)
+      
+      // 标记为已读
+      commentsToMark.forEach(commentId => {
+        const readKey = `${currentUserId}_${taskId}_${commentId}`
+        readRecords[readKey] = true
+      })
+      
+      resolve({
+        code: 200,
+        message: '标记成功',
+        data: {
+          taskId: parseInt(taskId),
+          markedCount: commentsToMark.length
+        }
       })
     }, 300)
   })

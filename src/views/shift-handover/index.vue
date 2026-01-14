@@ -23,8 +23,21 @@
               >
                 <div class="task-header">
                   <span class="task-title">{{ task.title || '无标题' }}</span>
-                  <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
-                  <el-tag v-else type="success" size="small">已读</el-tag>
+                  <div class="task-status">
+                    <el-badge 
+                      v-if="task.type === 'task' && task.unreadCommentCount > 0" 
+                      :value="task.unreadCommentCount" 
+                      :max="99"
+                      class="unread-badge"
+                    >
+                      <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
+                      <el-tag v-else type="success" size="small">已读</el-tag>
+                    </el-badge>
+                    <template v-else>
+                      <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
+                      <el-tag v-else type="success" size="small">已读</el-tag>
+                    </template>
+                  </div>
                 </div>
                 <div class="task-meta">
                   <span class="task-type">{{ task.type === 'memo' ? '备忘录' : '任务交接' }}</span>
@@ -46,8 +59,21 @@
               >
                 <div class="task-header">
                   <span class="task-title">{{ task.title || '无标题' }}</span>
-                  <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
-                  <el-tag v-else type="success" size="small">已读</el-tag>
+                  <div class="task-status">
+                    <el-badge 
+                      v-if="task.unreadCommentCount > 0" 
+                      :value="task.unreadCommentCount" 
+                      :max="99"
+                      class="unread-badge"
+                    >
+                      <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
+                      <el-tag v-else type="success" size="small">已读</el-tag>
+                    </el-badge>
+                    <template v-else>
+                      <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
+                      <el-tag v-else type="success" size="small">已读</el-tag>
+                    </template>
+                  </div>
                 </div>
                 <div class="task-meta">
                   <span class="task-type">任务交接</span>
@@ -72,8 +98,21 @@
               >
                 <div class="task-header">
                   <span class="task-title">{{ task.title || '无标题' }}</span>
-                  <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
-                  <el-tag v-else type="success" size="small">已读</el-tag>
+                  <div class="task-status">
+                    <el-badge 
+                      v-if="task.unreadCommentCount > 0" 
+                      :value="task.unreadCommentCount" 
+                      :max="99"
+                      class="unread-badge"
+                    >
+                      <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
+                      <el-tag v-else type="success" size="small">已读</el-tag>
+                    </el-badge>
+                    <template v-else>
+                      <el-tag v-if="!task.isRead" type="danger" size="small">未读</el-tag>
+                      <el-tag v-else type="success" size="small">已读</el-tag>
+                    </template>
+                  </div>
                 </div>
                 <div class="task-meta">
                   <span class="task-type">任务交接</span>
@@ -294,7 +333,10 @@ import {
   markTaskAsRead,
   deleteTask,
   getTaskComments,
-  addTaskComment
+  addTaskComment,
+  getUnreadCommentCount,
+  getAllUnreadCounts,
+  markCommentsAsRead
 } from '@/api/shiftHandover'
 
 defineOptions({
@@ -367,12 +409,38 @@ const loadTaskList = async () => {
     handoverTasks.value = data.handoverTasks || []
     handoveredTasks.value = data.handoveredTasks || []
     
+    // 加载未读消息数量
+    await loadUnreadCounts()
+    
     console.log('我的任务:', myTasks.value)
     console.log('交接任务:', handoverTasks.value)
     console.log('被交接任务:', handoveredTasks.value)
   } catch (error) {
     console.error('加载任务列表失败:', error)
     ElMessage.error('加载任务列表失败')
+  }
+}
+
+// 加载未读消息数量
+const loadUnreadCounts = async () => {
+  try {
+    const res = await getAllUnreadCounts()
+    const unreadCounts = res?.data || res || {}
+    
+    // 更新任务列表中的未读数量
+    const updateUnreadCount = (task) => {
+      if (task.type === 'task') {
+        task.unreadCommentCount = unreadCounts[task.id] || 0
+      } else {
+        task.unreadCommentCount = 0
+      }
+    }
+    
+    myTasks.value.forEach(updateUnreadCount)
+    handoverTasks.value.forEach(updateUnreadCount)
+    handoveredTasks.value.forEach(updateUnreadCount)
+  } catch (error) {
+    console.error('加载未读数量失败:', error)
   }
 }
 
@@ -398,9 +466,15 @@ const handleSelectTask = async (task) => {
     selectedTask.value = res?.data || res || task
     isCreating.value = false
     
-    // 如果是任务交接类型，加载沟通记录
+    // 如果是任务交接类型，加载沟通记录并标记为已读
     if (selectedTask.value.type === 'task') {
       await loadTaskComments(task.id)
+      // 标记该任务的所有沟通记录为已读
+      await markCommentsAsRead(task.id)
+      // 更新未读数量
+      task.unreadCommentCount = 0
+      // 更新列表中的未读数量
+      await loadUnreadCounts()
     } else {
       taskComments.value = []
     }
@@ -458,6 +532,9 @@ const handleSubmitComment = async () => {
     commentContent.value = ''
     
     ElMessage.success('反馈发送成功')
+    
+    // 更新未读数量（新消息对对方来说是未读的）
+    await loadUnreadCounts()
     
     // 滚动到底部
     setTimeout(() => {
@@ -761,6 +838,19 @@ onMounted(() => {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        .task-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .unread-badge {
+            :deep(.el-badge__content) {
+              background-color: #f56c6c;
+              border-color: #f56c6c;
+            }
+          }
         }
       }
 
