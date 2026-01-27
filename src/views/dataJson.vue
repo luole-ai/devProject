@@ -81,17 +81,22 @@
         </el-form-item>
       </el-form>
     </div>
-
-    <!-- 页签区域 -->
-    <div class="tabs-area">
-      <el-tabs v-model="activeTab" @tab-click="handleTabClick">
-        <el-tab-pane label="基础信息" name="tab1">
-          <el-table :data="tableData" border style="width: 100%" v-loading="loading">
+    <DynamicTableColumns
+            :table-ref="basicTableRef"
+            :default-hidden-labels="['更新时间']"
+            placeholder="基础信息列显示设置"
+          />
+          <el-table :data="tableData" ref="basicTableRef" border style="width: 100%" v-loading="loading">
             <el-table-column prop="name" label="名称" />
             <el-table-column prop="status" label="状态" />
             <el-table-column prop="createTime" label="创建时间" />
             <el-table-column prop="updateTime" label="更新时间" />
           </el-table>
+    <!-- 页签区域 -->
+    <div class="tabs-area">
+      <el-tabs v-model="activeTab" @tab-click="handleTabClick">
+        <el-tab-pane label="基础信息" name="tab1">
+         
         </el-tab-pane>
 
         <el-tab-pane label="时间记录" name="tab2">
@@ -141,7 +146,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
-
+import DynamicTableColumns from '@/components/DynamicTableColumns.vue'
+const basicTableRef = ref(null)
 // 页签激活状态
 const activeTab = ref('tab1')
 const loading = ref(false)
@@ -266,7 +272,7 @@ const handleCurrentChange = (val) => {
 // 初始化
 onMounted(() => {
   fetchSelectOptions()
-  fetchTableData()
+  // fetchTableData()
 })
 </script>
 

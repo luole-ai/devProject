@@ -102,6 +102,39 @@ export const constantRoutes = [
           navKey: 'shift-handover'
         }
       },
+      {
+        path: 'dataJson',
+        name: 'dataJson',
+        component: () => import('@/views/dataJson.vue'),
+        meta: {
+          title: '数据JSON',
+          keepAlive: true,
+          keepAliveName: 'dataJson',
+          navKey: 'dataJson'
+        }
+      },
+      {
+        path: 'task-publish',
+        name: 'TaskPublish',
+        component: () => import('@/views/task-management/TaskPublish.vue'),
+        meta: {
+          title: '任务发布',
+          keepAlive: true,
+          keepAliveName: 'TaskPublish',
+          navKey: 'task-publish'
+        }
+      },
+      {
+        path: 'task-execution',
+        name: 'TaskExecution',
+        component: () => import('@/views/task-management/TaskExecution.vue'),
+        meta: {
+          title: '任务执行',
+          keepAlive: true,
+          keepAliveName: 'TaskExecution',
+          navKey: 'task-execution'
+        }
+      },
       ...iframeRoutes
     ]
   },

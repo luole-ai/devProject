@@ -1,0 +1,35 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.task.mapper.TaskExecutionRecordMapper">
+
+    <resultMap id="TaskExecutionRecordResultMap" type="com.example.task.entity.TaskExecutionRecord">
+        <id column="id" property="id"/>
+        <result column="work_list_id" property="workListId"/>
+        <result column="work_list_item_id" property="workListItemId"/>
+        <result column="executor" property="executor"/>
+        <result column="status" property="status"/>
+        <result column="feedback" property="feedback"/>
+        <result column="completed_at" property="completedAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.example.task.entity.TaskExecutionRecord"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_execution_record
+        (work_list_id, work_list_item_id, executor, status, feedback, completed_at)
+        VALUES
+        (#{workListId}, #{workListItemId}, #{executor}, #{status}, #{feedback}, #{completedAt})
+    </insert>
+
+    <select id="selectByWorkListItem" resultMap="TaskExecutionRecordResultMap">
+        SELECT *
+        FROM task_execution_record
+        WHERE work_list_id = #{workListId}
+          AND work_list_item_id = #{workListItemId}
+        ORDER BY created_at ASC
+    </select>
+
+</mapper>
+
+
