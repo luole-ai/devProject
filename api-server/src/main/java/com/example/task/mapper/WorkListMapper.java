@@ -1,17 +1,13 @@
 package com.example.task.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.task.entity.WorkList;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
 
 @Mapper
-public interface WorkListMapper {
-    int insert(WorkList workList);
-
-    int update(WorkList workList);
-
-    WorkList selectById(Long id);
+public interface WorkListMapper extends BaseMapper<WorkList> {
 
     List<WorkList> selectAll();
 }

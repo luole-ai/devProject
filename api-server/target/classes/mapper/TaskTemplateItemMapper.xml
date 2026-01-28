@@ -1,0 +1,37 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.task.mapper.TaskTemplateItemMapper">
+
+    <resultMap id="TaskTemplateItemResultMap" type="com.example.task.entity.TaskTemplateItem">
+        <id column="id" property="id"/>
+        <result column="template_id" property="templateId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="priority" property="priority"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insertBatch">
+        INSERT INTO task_template_item (template_id, name, description, priority, sort_order)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.templateId}, #{item.name}, #{item.description}, #{item.priority}, #{item.sortOrder})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByTemplateId" parameterType="long">
+        DELETE FROM task_template_item WHERE template_id = #{templateId}
+    </delete>
+
+    <select id="selectByTemplateId" parameterType="long" resultMap="TaskTemplateItemResultMap">
+        SELECT *
+        FROM task_template_item
+        WHERE template_id = #{templateId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+</mapper>
+
+

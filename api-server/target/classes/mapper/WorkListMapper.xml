@@ -1,0 +1,51 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.task.mapper.WorkListMapper">
+
+    <resultMap id="WorkListResultMap" type="com.example.task.entity.WorkList">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="description" property="description"/>
+        <result column="template_id" property="templateId"/>
+        <result column="publisher" property="publisher"/>
+        <result column="status" property="status"/>
+        <result column="assigned_to" property="assignedTo"/>
+        <result column="published_at" property="publishedAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.example.task.entity.WorkList"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO work_list (title, description, template_id, publisher, status, assigned_to, published_at)
+        VALUES (#{title}, #{description}, #{templateId}, #{publisher}, #{status}, #{assignedTo}, #{publishedAt})
+    </insert>
+
+    <update id="update" parameterType="com.example.task.entity.WorkList">
+        UPDATE work_list
+        SET title        = #{title},
+            description  = #{description},
+            template_id  = #{templateId},
+            publisher    = #{publisher},
+            status       = #{status},
+            assigned_to  = #{assignedTo},
+            published_at = #{publishedAt},
+            updated_at   = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" parameterType="long" resultMap="WorkListResultMap">
+        SELECT *
+        FROM work_list
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectAll" resultMap="WorkListResultMap">
+        SELECT *
+        FROM work_list
+        ORDER BY published_at DESC
+    </select>
+
+</mapper>
+
+
